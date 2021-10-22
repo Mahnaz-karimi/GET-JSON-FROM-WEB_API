@@ -25,19 +25,11 @@ namespace KmdWeb
 
         public static void printRateAndTime(DateTime dt, decimal rate, string fromCurrency, string toCurrency)
         {
-            System.Console.WriteLine(string.Format("{0:0.0000}", rate) + " Date:  " + dt.ToString());
+            System.Console.WriteLine(" DATA FROM JSON \n Rate:  " + string.Format("{0:0.00000000000000}", rate) + " DateTime:  " + (DateTime)(dt));
         }
+       
 
-        public static void fetchDataTimerEvent(object source, ElapsedEventArgs e)
-        {
-            dynamic json = fetchData();
-            if (json.updatedAt.Value.ToString() != getLastDateTimeFromSQLDB( json, ConfigurationManager.AppSettings["connectionString"]).ToString() )// If statement. Check updatedAt in json is the same Last datetime in database, if it is so don't do eny things 
-            {
-                insertJsonDataInSQlEvent(json, ConfigurationManager.AppSettings["connectionString"]);
-            }
-        }
-
-        public static DateTime getLastDateTimeFromSQLDB(dynamic json, string connString)
+        public static DateTime getLastDateTimeFromDB(dynamic json, string connString)
         {
             SqlCommand cmd = new SqlCommand();
             DateTime dtLine = DateTime.MinValue;
@@ -49,43 +41,43 @@ namespace KmdWeb
                 SqlDataReader myReader = myCommand.ExecuteReader();
                 while (myReader.Read())
                 {
-                    dtLine = (DateTime)myReader["UpdatedAt"];
-                    Console.WriteLine("Last Datetime in database:  " + dtLine.ToString() );
+                    dtLine = (DateTime)myReader["UpdatedAt"];                    
                 }
             }           
             
             return dtLine;
         }
-        
+
         public static void insertJsonDataInSQlEvent(dynamic json, string connString)
         {
             SqlCommand cmd = new SqlCommand();
             using (SqlConnection conn = new SqlConnection(connString))
             {
                 conn.Open();
-                cmd.CommandType = CommandType.Text;
                 cmd.Connection = conn;
                 foreach (var item in json.valutaKurser)
                 {
                     Console.WriteLine("RATE: " + Convert.ToString(item.rate.Value));
-                    cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt )";
-                    cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',','.') + " AS NUMERIC(25,15)), convert(datetime2,'" + json.updatedAt.Value.ToString() + "',103))";
-
-                    cmd.Connection = conn;
+                    cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt ) ";
+                    cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15)), convert(datetime2,'" + json.updatedAt.Value.ToString() + "',103))";
                     cmd.ExecuteNonQuery();
-                    try
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Console.WriteLine("erorr is ", ex.Message);
-                    }
 
-                }                
+                }
             }
 
         }
+
+
+        public static void fetchDataOnTimerEvent(object source, ElapsedEventArgs e)
+        {
+            dynamic json = fetchData();
+
+            if (json.updatedAt.Value.ToString() != getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]).ToString()) // Here Checks at the time from json-url is not the same as Last datetime in database. if isn't the same, program should insert json in data base 
+            {
+                insertJsonDataInSQlEvent(json, ConfigurationManager.AppSettings["connectionString"]);
+            }
+        }
+
 
         public static void Main(string[] args)
         {
@@ -94,29 +86,30 @@ namespace KmdWeb
             string connString = ConfigurationManager.AppSettings["connectionString"];
             dynamic json = fetchData();
             updatedAt = json.updatedAt.Value;
-            Console.WriteLine("updatedAT:  " + updatedAt.ToString());
 
-            DateTime lastDateTime = getLastDateTimeFromSQLDB(json, connString); // get last datetime in database                                                                        
-            Timer newTimer = new Timer();
+            DateTime lastDateTime = getLastDateTimeFromDB(json, connString); // get last datetime in database                                                                        
+            Console.WriteLine("Last Datetime in database:  " + lastDateTime.ToString());
 
             foreach (var item in json.valutaKurser) // loop for printer json data 
             {
                 printRateAndTime(updatedAt, Convert.ToDecimal(item.rate.Value), item.fromCurrency.Value, item.toCurrency.Value);
-            }            
-
-            if (updatedAt.ToString() != lastDateTime.ToString()) // If statement. Check updatedAt in json is the same Last datetime in database, if it is so don't do eny things 
-            {
-                Console.WriteLine("the Time is not the same, /n Last Datetime in database:  " + lastDateTime.ToString() + "  " + "updatedAT:  " + updatedAt.ToString());
-                insertJsonDataInSQlEvent(json, connString);
-                intervalInt = 108000000;
             }
-            else
+            
+            if (updatedAt.ToString() != lastDateTime.ToString()) // Here Checks at the time from json - url is not the same as Last datetime in database. if isn't the same, program should insert json in data base 
+
+            {
+                Console.WriteLine("the Time is not the same, \n Last Datetime in database:  " + lastDateTime.ToString() + "  " + "Datetime from json-url:  " + updatedAt.ToString());
+                insertJsonDataInSQlEvent(json, connString);
+                intervalInt = 108000000; // Set timer for 30 minuter for events igen
+            }
+            else // If there is the same time from json - url is and Last datetime in database. 
             {
                 intervalInt = 60000; // timer for every minetes
-            }           
-           
-           // Timer for events
-            newTimer.Elapsed += new ElapsedEventHandler(fetchDataTimerEvent);
+            }
+
+            // Timer for events
+            Timer newTimer = new Timer();
+            newTimer.Elapsed += new ElapsedEventHandler(fetchDataOnTimerEvent);
             newTimer.Interval = intervalInt; // inseter data every 30 minuter
             newTimer.Start();
             while (Console.Read() != 'q')
