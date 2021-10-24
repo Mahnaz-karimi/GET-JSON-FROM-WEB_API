@@ -12,7 +12,6 @@ namespace KmdWeb
 {
     public class Program
     {
-
         public static dynamic fetchData()
         {
             dynamic json;
@@ -21,11 +20,6 @@ namespace KmdWeb
                 json = JsonConvert.DeserializeObject(wc.DownloadString(ConfigurationManager.AppSettings["url"]));
             }
             return json;
-        }
-
-        public static void printRateAndTime(DateTime dt, decimal rate, string fromCurrency, string toCurrency)
-        {
-            System.Console.WriteLine(" DATA FROM JSON \n Rate:  " + string.Format("{0:0.00000000000000}", rate) + " DateTime:  " + (DateTime)(dt));
         }
        
 
@@ -48,7 +42,8 @@ namespace KmdWeb
             return dtLine;
         }
 
-        public static void insertJsonDataInSQlEvent(dynamic json, string connString)
+
+        public static void insertJsonDataInSQl(dynamic json, string connString)
         {
             SqlCommand cmd = new SqlCommand();
             using (SqlConnection conn = new SqlConnection(connString))
@@ -57,14 +52,14 @@ namespace KmdWeb
                 cmd.Connection = conn;
                 foreach (var item in json.valutaKurser)
                 {
-                    Console.WriteLine("RATE: " + Convert.ToString(item.rate.Value));
+                    Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value));
                     cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt ) ";
-                    cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15)), convert(datetime2,'" + json.updatedAt.Value.ToString() + "',103))";
+                    cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
+                                       "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
                     cmd.ExecuteNonQuery();
-
                 }
             }
-
+            
         }
 
 
@@ -74,7 +69,7 @@ namespace KmdWeb
 
             if (json.updatedAt.Value.ToString() != getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]).ToString()) // Here Checks at the time from json-url is not the same as Last datetime in database. if isn't the same, program should insert json in data base 
             {
-                insertJsonDataInSQlEvent(json, ConfigurationManager.AppSettings["connectionString"]);
+                insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
             }
         }
 
@@ -84,25 +79,29 @@ namespace KmdWeb
             DateTime updatedAt;
             int intervalInt = 108000000; // timer to run programm about 30 minuttes
             string connString = ConfigurationManager.AppSettings["connectionString"];
-            dynamic json = fetchData();
+            dynamic json = fetchData(); // Get data from url like json file
             updatedAt = json.updatedAt.Value;
-
+            
+            
             DateTime lastDateTime = getLastDateTimeFromDB(json, connString); // get last datetime in database                                                                        
             Console.WriteLine("Last Datetime in database:  " + lastDateTime.ToString());
 
-            foreach (var item in json.valutaKurser) // loop for printer json data 
+            foreach (var item in json.valutaKurser) // loop for print json-data 
             {
-                printRateAndTime(updatedAt, Convert.ToDecimal(item.rate.Value), item.fromCurrency.Value, item.toCurrency.Value);
+                Console.WriteLine(" DATA FROM JSON: Rate:  " + string.Format("{0:0.0000000000000000}", (item.rate.Value) + "   DateTime:  " 
+                    + (updatedAt.ToString("yyyy-MM-dd HH:mm:ss.fffffff")) + "   fromCurrency: "+ item.fromCurrency.Value + "   toCurrency: " + item.toCurrency.Value));
+                
             }
             
-            if (updatedAt.ToString() != lastDateTime.ToString()) // Here Checks at the time from json - url is not the same as Last datetime in database. if isn't the same, program should insert json in data base 
+            if (updatedAt.ToString() != lastDateTime.ToString()) // Here Checks at the time from json - url is not the same as Last datetime in database. If it isn't the same, program should insert json in data base 
 
             {
-                Console.WriteLine("the Time is not the same, \n Last Datetime in database:  " + lastDateTime.ToString() + "  " + "Datetime from json-url:  " + updatedAt.ToString());
-                insertJsonDataInSQlEvent(json, connString);
+                Console.WriteLine(" The Time is not the same!!  Database Datetime:  " + lastDateTime.ToString() + "  " + " Json Datetime:  " + updatedAt.ToString());
+                insertJsonDataInSQl(json, connString);
+                
                 intervalInt = 108000000; // Set timer for 30 minuter for events igen
             }
-            else // If there is the same time from json - url is and Last datetime in database. 
+            else // When we start program, if time from json-url is the same as Last datetime in database it wil check every minetes for 
             {
                 intervalInt = 60000; // timer for every minetes
             }
@@ -110,11 +109,11 @@ namespace KmdWeb
             // Timer for events
             Timer newTimer = new Timer();
             newTimer.Elapsed += new ElapsedEventHandler(fetchDataOnTimerEvent);
-            newTimer.Interval = intervalInt; // inseter data every 30 minuter
-            newTimer.Start();
+            newTimer.Interval = intervalInt; // insert data every 30 minuter
+            newTimer.Start();            
             while (Console.Read() != 'q')
             {
-                ;    // we can write anything here if we want, leaving this part blank won’t bother the code execution.
+                // We can write anything here if we want, leaving this part blank won’t bother the code execution.
             }
 
         }
