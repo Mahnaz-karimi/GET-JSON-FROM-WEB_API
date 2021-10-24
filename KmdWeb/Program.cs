@@ -84,7 +84,7 @@ namespace KmdWeb
             
             
             DateTime lastDateTime = getLastDateTimeFromDB(json, connString); // get last datetime in database                                                                        
-            Console.WriteLine("Last Datetime in database:  " + lastDateTime.ToString());
+            Console.WriteLine("Last Datetime that is saved in database, is:  " + lastDateTime.ToString()+ "\n\nPrinting Json ... \n");
 
             foreach (var item in json.valutaKurser) // loop for print json-data 
             {
@@ -96,7 +96,7 @@ namespace KmdWeb
             if (updatedAt.ToString() != lastDateTime.ToString()) // Here Checks at the time from json - url is not the same as Last datetime in database. If it isn't the same, program should insert json in data base 
 
             {
-                Console.WriteLine(" The Time is not the same!!  Database Datetime:  " + lastDateTime.ToString() + "  " + " Json Datetime:  " + updatedAt.ToString());
+                Console.WriteLine("\nThe Time fromm json and sql is not the same!!  Database Datetime:  " + lastDateTime.ToString() + "  " + " Json Datetime:  " + updatedAt.ToString()+ "\n\nInserting data in SQL...\n");
                 insertJsonDataInSQl(json, connString);
                 
                 intervalInt = 108000000; // Set timer for 30 minuter for events igen
