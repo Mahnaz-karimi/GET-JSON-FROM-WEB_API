@@ -12,6 +12,8 @@ namespace KmdWeb
 {
     public class Program
     {
+       public static int intervalInt = 1000; // timer to run programm about 30 minuttes
+
         public static dynamic fetchData()
         {
             dynamic json;
@@ -72,58 +74,60 @@ namespace KmdWeb
             
         }
 
+        public static int getMintetsDifrenec()
+        {
+            dynamic json = fetchData();
+            DateTime updatedAt = json.updatedAt.Value;
+            TimeSpan ts = DateTime.Now - updatedAt ; // calculate difrenece time between last data from database and datetime from json
+            Console.WriteLine("intervalInttttt: " + ts.TotalMinutes.ToString());   
+            if (Convert.ToInt32(ts.TotalMinutes) > 30)
+            {
+                return 60000; // 5 secend have to wait
+            }
+            else
+            {
+                return 30 - Convert.ToInt32(ts.TotalMinutes) * 60 * 1000; // If there is time diference between 30 minetes return a number under 30
+            }
+            
+            
+
+        }
 
         public static void fetchData_TimerEvent(object source, ElapsedEventArgs e)
         {
             dynamic json = fetchData();
+            DateTime updatedAt = json.updatedAt.Value;
 
+            if (json.updatedAt.Value.ToString() != getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]).ToString()) // Here Checks at the time from json-url is not the same as Last datetime in database. if isn't the same, program should insert json in data base 
+            {
+                insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
+            }
+
+            getMintetsDifrenec();
         }
 
 
         public static void Main(string[] args)
         {
             
-            int intervalInt = 108000000; // timer to run programm about 30 minuttes
-            string connString = ConfigurationManager.AppSettings["connectionString"];
-            dynamic json = fetchData(); // Get data from url like json file
+            
 
-            DateTime updatedAt = json.updatedAt.Value;  // datetime from json              
-            DateTime lastDateTime = getLastDateTimeFromDB(json, connString); // get last datetime in database                                                                             
+            dynamic json = fetchData(); // Get data from url like json file
+            DateTime updatedAt = json.updatedAt.Value;  // datetime from json
+                                                        
+            DateTime lastDateTime = getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]); // get last datetime in database                                                                             
 
             print_Json_From_URL(json);
 
             // Timer for events
             Timer newTimer = new Timer();
             newTimer.Elapsed += new ElapsedEventHandler(fetchData_TimerEvent);
+            intervalInt = getMintetsDifrenec() ;            
             newTimer.Interval = intervalInt; // insert data every 30 minuter
+            Console.WriteLine("intervalInt: " + intervalInt / 60 /1000 );
             newTimer.Start();
-            while (updatedAt.ToString() != lastDateTime.ToString()) // Here Checks at the time from json - url is not the same as Last datetime in database. If it isn't the same, program should insert json in data base 
-
-            {                
-                Console.WriteLine("\nThe Time fromm json and sql is not the same!!  Database Datetime:  " + lastDateTime.ToString() + "  " + " Json Datetime:  " + updatedAt.ToString() + "\n\nInserting data in SQL...\n");
-                insertJsonDataInSQl(json, connString);
-
-                json = fetchData();
-                updatedAt = json.updatedAt.Value;
-                lastDateTime = getLastDateTimeFromDB(json, connString);
-                TimeSpan ts = DateTime.Now - lastDateTime;
-                Console.WriteLine("Difference MINUTES:  " + ts.TotalMinutes.ToString());
-                if (ts.TotalMinutes < 5)
-                {
-                    intervalInt = 108000000; // Set timer for 30 minuter for events igen
-                }
-                else if (ts.TotalMinutes > 5 && ts.TotalMinutes < 15)
-                {
-                    intervalInt = 54000000; // Set timer for 15 minuter for events igen
-                }
-                else if (ts.TotalMinutes > 15 && ts.TotalMinutes < 25)// Set timer for 1 minuter for events igen
-                {
-                    intervalInt = 60000; // Set timer for 1 minuter for events igen
-                }
-                else
-                {
-                    intervalInt = 1000;
-                }
+            while (Console.Read() != 'q') // Here Checks at the time from json - url is not the same as Last datetime in database. If it isn't the same, program should insert json in data base 
+            {               
             }
 
         }
