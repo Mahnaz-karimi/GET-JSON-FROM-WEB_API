@@ -11,8 +11,9 @@ using System.Configuration;
 namespace KmdWeb
 {
     public class Program
+
     {
-       public static int intervalInt = 1000; // timer to run programm about 30 minuttes
+        public static int intervalInt = 1000; // timer to run programm about 30 minuttes
 
         public static dynamic fetchData() // get json data and save in json object
         {
@@ -74,7 +75,7 @@ namespace KmdWeb
             
         }
 
-        public static int getMintetsDifrenec()
+        public static int newTimerTid()
         {
             dynamic json = fetchData();
             DateTime updatedAt = json.updatedAt.Value;
@@ -82,18 +83,20 @@ namespace KmdWeb
             Console.WriteLine("intervalInttttt: " + ts.TotalMinutes.ToString());   
             if (Convert.ToInt32(ts.TotalMinutes) > 30)
             {
-                return 60000; // 5 secend have to wait
+                intervalInt = 60000;
+                return intervalInt; // 5 secend have to wait
             }
             else
             {
-                return 30 - Convert.ToInt32(ts.TotalMinutes) * 60 * 1000; // If there is time diference between 30 minetes return a number under 30
+                intervalInt = 30 - Convert.ToInt32(ts.TotalMinutes) * 60 * 1000;
+                return intervalInt; // If there is time diference between 30 minetes return a number under 30
             }
             
             
 
         }
 
-        public static void fetchData_TimerEvent(object source, ElapsedEventArgs e)
+        public static void Update_sql_TimerEvent(object source, ElapsedEventArgs e)
         {
             dynamic json = fetchData();
             DateTime updatedAt = json.updatedAt.Value;
@@ -102,29 +105,27 @@ namespace KmdWeb
             {
                 insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
             }
+            newTimerTid();
 
-            getMintetsDifrenec();
         }
 
 
         public static void Main(string[] args)
         {
-            
-            
-
+             // timer to run programm about 30 minuttes
             dynamic json = fetchData(); // Get data from url like json file
-            DateTime updatedAt = json.updatedAt.Value;  // datetime from json
-                                                        
+            DateTime updatedAt = json.updatedAt.Value;  // datetime from json                                                        
             DateTime lastDateTime = getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]); // get last datetime in database                                                                             
 
             print_Json_From_URL(json);
 
             // Timer for events
             Timer newTimer = new Timer();
-            newTimer.Elapsed += new ElapsedEventHandler(fetchData_TimerEvent);
-            intervalInt = getMintetsDifrenec() ;            
+            newTimer.Elapsed += new ElapsedEventHandler(Update_sql_TimerEvent);
+
+            Console.WriteLine("intervalInt: " + intervalInt / 60 / 1000);
+
             newTimer.Interval = intervalInt; // insert data every 30 minuter
-            Console.WriteLine("intervalInt: " + intervalInt / 60 /1000 );
             newTimer.Start();
             while (Console.Read() != 'q') // Here Checks at the time from json - url is not the same as Last datetime in database. If it isn't the same, program should insert json in data base 
             {               
