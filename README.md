@@ -1,2 +1,3 @@
-![API-timer drawio (3)](https://user-images.githubusercontent.com/72239384/138887245-3af1b4a0-bea3-4c9e-a7f2-f64be543592c.png)
+![API-timer drawio (4)](https://user-images.githubusercontent.com/72239384/138888380-81061c06-35b0-4b4d-8291-888df4404447.png)
+
 
