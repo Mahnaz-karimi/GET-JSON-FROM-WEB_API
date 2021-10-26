@@ -14,12 +14,12 @@ namespace KmdWeb
     {
        public static int intervalInt = 1000; // timer to run programm about 30 minuttes
 
-        public static dynamic fetchData()
+        public static dynamic fetchData() // get json data and save in json object
         {
             dynamic json;
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString(ConfigurationManager.AppSettings["url"]));
+                json = JsonConvert.DeserializeObject(wc.DownloadString(ConfigurationManager.AppSettings["url"])); // 
             }
             return json;
         }
@@ -65,7 +65,7 @@ namespace KmdWeb
                 foreach (var item in json.valutaKurser)
                 {
                     Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value));
-                    cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt ) ";
+                    cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt) ";
                     cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
                                        "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
                     cmd.ExecuteNonQuery();
