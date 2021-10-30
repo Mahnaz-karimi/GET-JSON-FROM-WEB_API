@@ -13,14 +13,14 @@ namespace KmdWeb
     public class Program
 
     {
-        public static int intervalInt = 1000; // timer to run programm about 30 minuttes
+        public static int intervalInt = 10000; // timer to run programm about 30 minuttes
 
         public static dynamic fetchData() // get json data and save in json object
         {
             dynamic json;
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString(ConfigurationManager.AppSettings["url"])); // 
+                json = JsonConvert.DeserializeObject(wc.DownloadString("https://localhost:44351/api/values")); // 
             }
             return json;
         }
@@ -81,19 +81,12 @@ namespace KmdWeb
             DateTime updatedAt = json.updatedAt.Value;
             TimeSpan ts = DateTime.Now - updatedAt ; // calculate difrenece time between last data from database and datetime from json
             Console.WriteLine("intervalInttttt: " + ts.TotalMinutes.ToString());   
-            if (Convert.ToInt32(ts.TotalMinutes) > 30)
-            {
-                intervalInt = 60000;
-                return intervalInt; // 5 secend have to wait
-            }
-            else
-            {
-                intervalInt = 30 - Convert.ToInt32(ts.TotalMinutes) * 60 * 1000;
-                return intervalInt; // If there is time diference between 30 minetes return a number under 30
-            }
-            
-            
-
+            if (Convert.ToInt32(ts.TotalMinutes) < 30)
+                {
+                    intervalInt = 30 - Convert.ToInt32(ts.TotalMinutes) * 60 * 1000;
+                    return intervalInt; // If there is time diference between 30 minetes return a number under 30
+                }
+            return intervalInt;
         }
 
         public static void Update_sql_TimerEvent(object source, ElapsedEventArgs e)
