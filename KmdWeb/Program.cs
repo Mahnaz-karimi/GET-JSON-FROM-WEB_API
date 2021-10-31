@@ -13,14 +13,14 @@ namespace KmdWeb
     public class Program
 
     {
-        public static int intervalInt ; // timer to run programm about 30 minuttes
+        public static int interval_time_for_save = 5; // time for at save data-json in sql
 
         public static dynamic fetchData() // get json data and save in json object
         {
             dynamic json;
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString("https://localhost:44351/api/values")); // 
+                json = JsonConvert.DeserializeObject(wc.DownloadString("https://localhost:44351/api/values")); // other project sould run first
             }
             return json;
         }
@@ -30,18 +30,25 @@ namespace KmdWeb
         {
             SqlCommand cmd = new SqlCommand();
             DateTime dtLine = DateTime.MinValue;
-
-            using ( SqlConnection conn = new SqlConnection(connString))
+            try // Try/catch and 'using' are much different. Try/catch is used for exception handling while using is used to ensure the object is disposed. Object is now databses state.
             {
-                conn.Open();
-                SqlCommand myCommand = new SqlCommand("SELECT TOP (1) [UpdatedAt] FROM [KMD].[dbo].[ValutaKurser] order by UpdatedAt Desc; ", conn);
-                SqlDataReader myReader = myCommand.ExecuteReader();
-                while (myReader.Read())
+                using (SqlConnection conn = new SqlConnection(connString))
                 {
-                    dtLine = (DateTime)myReader["UpdatedAt"];                    
+                    conn.Open();
+                    SqlCommand myCommand = new SqlCommand("SELECT TOP (1) [UpdatedAt] FROM [KMD].[dbo].[ValutaKurser] order by UpdatedAt Desc; ", conn);
+                    SqlDataReader myReader = myCommand.ExecuteReader();
+                    while (myReader.Read())
+                    {
+                        dtLine = (DateTime)myReader["UpdatedAt"];
+                    }
                 }
-            }           
-            
+            }
+            catch (Exception er) // Not enough security privileges or the device isn't there or there's not enough space or the device has a physical fault
+            {
+                Console.WriteLine(er.Message);
+            }
+
+
             return dtLine;
         }
 
@@ -50,16 +57,17 @@ namespace KmdWeb
             DateTime updatedAt = json.updatedAt.Value;
             foreach (var item in json.valutaKurser) // loop for print json-data 
             {
-                Console.WriteLine(" DATA FROM JSON: Rate:  " + string.Format("{0:0.0000000000000000}", (item.rate.Value) + "   DateTime:  "
-                    + (updatedAt.ToString("yyyy-MM-dd HH:mm:ss.fffffff")) + "   fromCurrency: " + item.fromCurrency.Value + "   toCurrency: " + item.toCurrency.Value));
+                Console.WriteLine("\n DATA FROM JSON: Rate:  " + string.Format("{0:0.0000000000000000}", (item.rate.Value) +
+                    "   fromCurrency: " + item.fromCurrency.Value + "   toCurrency: " + item.toCurrency.Value));
 
             }
+            Console.WriteLine("\n TIME FROM JSON: Rate:  " + "DateTime:  " + (updatedAt.ToString("yyyy-MM-dd HH:mm:ss.fffffff")));
         }
 
         public static void insertJsonDataInSQl(dynamic json, string connString)
         {
             SqlCommand cmd = new SqlCommand();
-            using (SqlConnection conn = new SqlConnection(connString))
+            using (SqlConnection conn = new SqlConnection(connString)) // 
             {
                 conn.Open();
                 cmd.Connection = conn;
@@ -75,54 +83,64 @@ namespace KmdWeb
             
         }
 
-        public static int newTimerTid()
+        public static int newTimerTime()
         {
-            dynamic json = fetchData();
-            DateTime updatedAt = json.updatedAt.Value;
-            TimeSpan ts = DateTime.Now - updatedAt ; // calculate difrenece time between last data from database and datetime from json
-            Console.WriteLine("intervalInttttt: " + ts.TotalMinutes.ToString());   
-            if (Convert.ToInt32(ts.TotalMinutes) < 30)
+            int minDifference = getMinuttDifferenceTimeSpam(); // diference between json and sql to min
+            int newIntervalInt;
+            if (minDifference <= interval_time_for_save)
             {
-                intervalInt = (30 - Convert.ToInt32(ts.TotalMinutes)) * 60 * 1000;
-                return intervalInt; // If there is time diference between 30 minetes return a number under 30
+                newIntervalInt = (interval_time_for_save - minDifference) * 60 * 1000;
+                Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000);
+                return newIntervalInt; // If there is time diference between 30 minetes return a number that should be under 30
             }
             else
             {
-                intervalInt = 10000;
-                return intervalInt;
+                newIntervalInt = 1000; //
+                Console.WriteLine("\n Because of difference is bigger then 5 min thats New timer time is: " + newIntervalInt);
+                return newIntervalInt;
             }
             
+        }
+
+        public static int getMinuttDifferenceTimeSpam()
+        {
+            dynamic json = fetchData();
+            DateTime updatedAt = json.updatedAt.Value; // get datetime from json
+            DateTime lastDateTime = getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]); // get last datetime in database 
+            TimeSpan ts = updatedAt - lastDateTime; // calculate difrenece time between last data from database and datetime from json...
+            int interval = Convert.ToInt32(ts.TotalMinutes);
+            Console.WriteLine("\n Difference betweeen json and sql datetime: " + interval + "\n");
+            return interval;
         }
 
         public static void Update_sql_TimerEvent(object source, ElapsedEventArgs e)
         {
             dynamic json = fetchData();
-            DateTime updatedAt = json.updatedAt.Value;
+            int minDifference = getMinuttDifferenceTimeSpam(); // difference between json and sql-database
 
-            if (json.updatedAt.Value.ToString() != getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]).ToString()) // Here Checks at the time from json-url is not the same as Last datetime in database. if isn't the same, program should insert json in data base 
+            if ( minDifference >= interval_time_for_save) // if diff-time is bigger then time shoud data saved so save data
             {
                 insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
-            }
-            newTimerTid();
+                Console.WriteLine("\n SQL database is updated: " + DateTime.Now);       
+            }            
 
         }
 
-
         public static void Main(string[] args)
         {
-             // timer to run programm about 30 minuttes
-            dynamic json = fetchData(); // Get data from url like json file
-            DateTime updatedAt = json.updatedAt.Value;  // datetime from json                                                        
-            DateTime lastDateTime = getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]); // get last datetime in database                                                                             
-            intervalInt = 10000;
-            print_Json_From_URL(json);
+            int intervalInt = 10; // timerevents tid
+            dynamic json = fetchData(); // Get data from url like json file 
+            print_Json_From_URL(json); // print json file
 
             // Timer for events
-            Timer newTimer = new Timer();
+            Timer newTimer = new Timer();            
+            Console.WriteLine("\n NewTimer.Interval: " + newTimer.Interval.ToString());
             newTimer.Elapsed += new ElapsedEventHandler(Update_sql_TimerEvent);
-            Console.WriteLine("intervalInt: " + intervalInt / 60 / 1000);
-
-            newTimer.Interval = intervalInt; // insert data every 30 minuter
+            intervalInt = newTimerTime(); // new interval should be the same time or less then the time, program must store the data
+            newTimer.Interval = intervalInt;
+            Console.WriteLine("\n New interval is: " + intervalInt / 60 / 1000); 
+            Console.WriteLine("\n Date time now: " + DateTime.Now);
+            // insert data every 30 minuter
             newTimer.Start();
             while (Console.Read() != 'q') // Here Checks at the time from json - url is not the same as Last datetime in database. If it isn't the same, program should insert json in data base 
             {               
