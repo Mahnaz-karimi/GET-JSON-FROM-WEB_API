@@ -67,20 +67,27 @@ namespace KmdWeb
         public static void insertJsonDataInSQl(dynamic json, string connString)
         {
             SqlCommand cmd = new SqlCommand();
-            using (SqlConnection conn = new SqlConnection(connString)) // 
-            {
-                conn.Open();
-                cmd.Connection = conn;
-                foreach (var item in json.valutaKurser)
+            try {
+                using (SqlConnection conn = new SqlConnection(connString)) // 
                 {
-                    Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value));
-                    cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt) ";
-                    cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
-                                       "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
-                    cmd.ExecuteNonQuery();
+                    conn.Open();
+                    cmd.Connection = conn;
+                    foreach (var item in json.valutaKurser)
+                    {
+                        Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value));
+                        cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt) ";
+                        cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
+                                           "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
+                        cmd.ExecuteNonQuery();
+                    }
                 }
             }
-            
+            catch (Exception er) // Not enough security privileges or the device isn't there or there's not enough space or the device has a physical fault
+            {
+                Console.WriteLine(er.Message);
+            }
+
+
         }
 
         public static int newTimerTime()
@@ -93,12 +100,7 @@ namespace KmdWeb
                 Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000);
                 return newIntervalInt; // If there is time diference between 30 minetes return a number that should be under 30
             }
-            else
-            {
-                newIntervalInt = 1000; //
-                Console.WriteLine("\n Because of difference is bigger then 5 min thats New timer time is: " + newIntervalInt);
-                return newIntervalInt;
-            }
+            return 60000;
             
         }
 
@@ -121,27 +123,28 @@ namespace KmdWeb
             if ( minDifference >= interval_time_for_save) // if diff-time is bigger then time shoud data saved so save data
             {
                 insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
-                Console.WriteLine("\n SQL database is updated: " + DateTime.Now);       
-            }            
-
+                Console.WriteLine("\n SQL database is updated: " + DateTime.Now);
+                newTimerTime();
+            }
+           
         }
 
         public static void Main(string[] args)
         {
-            int intervalInt = 10; // timerevents tid
             dynamic json = fetchData(); // Get data from url like json file 
             print_Json_From_URL(json); // print json file
-
+            int intervalint = newTimerTime();
             // Timer for events
             Timer newTimer = new Timer();            
-            Console.WriteLine("\n NewTimer.Interval: " + newTimer.Interval.ToString());
             newTimer.Elapsed += new ElapsedEventHandler(Update_sql_TimerEvent);
-            intervalInt = newTimerTime(); // new interval should be the same time or less then the time, program must store the data
-            newTimer.Interval = intervalInt;
-            Console.WriteLine("\n New interval is: " + intervalInt / 60 / 1000); 
-            Console.WriteLine("\n Date time now: " + DateTime.Now);
-            // insert data every 30 minuter
+            newTimer.Interval = 1000; // starter eventes efter 1 secend
+            
             newTimer.Start();
+            newTimer.Interval = intervalint;
+            intervalint = newTimerTime();
+            // new interval should be the same time or less then the time, program must store the data
+            Console.WriteLine("\n New interval is: " + intervalint);
+            Console.WriteLine("\n Date time now: " + DateTime.Now);
             while (Console.Read() != 'q') // Here Checks at the time from json - url is not the same as Last datetime in database. If it isn't the same, program should insert json in data base 
             {               
             }
