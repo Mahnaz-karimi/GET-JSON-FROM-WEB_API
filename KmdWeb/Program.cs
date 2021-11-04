@@ -13,6 +13,7 @@ namespace KmdWeb
     public class Program
 
     {
+        public static Timer newTimer = new Timer();
         public static int interval_time_for_save = 5; // time for at save data-json in sql
 
         public static dynamic fetchData() // get json data and save in json object
@@ -30,25 +31,17 @@ namespace KmdWeb
         {
             SqlCommand cmd = new SqlCommand();
             DateTime dtLine = DateTime.MinValue;
-            try // Try/catch and 'using' are much different. Try/catch is used for exception handling while using is used to ensure the object is disposed. Object is now databses state.
+
+            using (SqlConnection conn = new SqlConnection(connString))
             {
-                using (SqlConnection conn = new SqlConnection(connString))
+                conn.Open();
+                SqlCommand myCommand = new SqlCommand("SELECT TOP (1) [UpdatedAt] FROM [KMD].[dbo].[ValutaKurser] order by UpdatedAt Desc; ", conn);
+                SqlDataReader myReader = myCommand.ExecuteReader();
+                while (myReader.Read())
                 {
-                    conn.Open();
-                    SqlCommand myCommand = new SqlCommand("SELECT TOP (1) [UpdatedAt] FROM [KMD].[dbo].[ValutaKurser] order by UpdatedAt Desc; ", conn);
-                    SqlDataReader myReader = myCommand.ExecuteReader();
-                    while (myReader.Read())
-                    {
-                        dtLine = (DateTime)myReader["UpdatedAt"];
-                    }
+                    dtLine = (DateTime)myReader["UpdatedAt"];
                 }
             }
-            catch (Exception er) // Not enough security privileges or the device isn't there or there's not enough space or the device has a physical fault
-            {
-                Console.WriteLine(er.Message);
-            }
-
-
             return dtLine;
         }
 
@@ -67,8 +60,8 @@ namespace KmdWeb
         public static void insertJsonDataInSQl(dynamic json, string connString)
         {
             SqlCommand cmd = new SqlCommand();
-            try {
-                using (SqlConnection conn = new SqlConnection(connString)) // 
+
+            using (SqlConnection conn = new SqlConnection(connString)) // 
                 {
                     conn.Open();
                     cmd.Connection = conn;
@@ -77,30 +70,23 @@ namespace KmdWeb
                         Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value));
                         cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt) ";
                         cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
-                                           "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
+                                            "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
                         cmd.ExecuteNonQuery();
                     }
                 }
-            }
-            catch (Exception er) // Not enough security privileges or the device isn't there or there's not enough space or the device has a physical fault
-            {
-                Console.WriteLine(er.Message);
-            }
-
-
         }
 
-        public static int newTimerTime()
+        public static int newTimerTime(int MinuttDifferenceTimeSpam)
         {
-            int minDifference = getMinuttDifferenceTimeSpam(); // diference between json and sql to min
+                                   // diference between json and sql to min
             int newIntervalInt;
-            if (minDifference <= interval_time_for_save)
+            if (MinuttDifferenceTimeSpam <= interval_time_for_save)
             {
-                newIntervalInt = (interval_time_for_save - minDifference) * 60 * 1000;
-                Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000);
+                newIntervalInt = (interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000 + 1;
+                Console.WriteLine("\n New timer time : " + newIntervalInt/60/1000);
                 return newIntervalInt; // If there is time diference between 30 minetes return a number that should be under 30
             }
-            return 60000;
+            return 1000;
             
         }
 
@@ -115,7 +101,7 @@ namespace KmdWeb
             return interval;
         }
 
-        public static void Update_sql_TimerEvent(object source, ElapsedEventArgs e)
+        public static void update_sql_TimerEvent(object source, ElapsedEventArgs e)
         {
             dynamic json = fetchData();
             int minDifference = getMinuttDifferenceTimeSpam(); // difference between json and sql-database
@@ -124,7 +110,9 @@ namespace KmdWeb
             {
                 insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
                 Console.WriteLine("\n SQL database is updated: " + DateTime.Now);
-                newTimerTime();
+                int intervalint = newTimerTime(getMinuttDifferenceTimeSpam());
+                newTimer.Interval = intervalint; // starter eventes with new interval
+                Console.WriteLine("\n New interval is: " + intervalint / 60 / 1000);
             }
            
         }
@@ -133,22 +121,18 @@ namespace KmdWeb
         {
             dynamic json = fetchData(); // Get data from url like json file 
             print_Json_From_URL(json); // print json file
-            int intervalint = newTimerTime();
-            // Timer for events
-            Timer newTimer = new Timer();            
-            newTimer.Elapsed += new ElapsedEventHandler(Update_sql_TimerEvent);
-            newTimer.Interval = 1000; // starter eventes efter 1 secend
-            
-            newTimer.Start();
-            newTimer.Interval = intervalint;
-            intervalint = newTimerTime();
-            // new interval should be the same time or less then the time, program must store the data
-            Console.WriteLine("\n New interval is: " + intervalint);
-            Console.WriteLine("\n Date time now: " + DateTime.Now);
-            while (Console.Read() != 'q') // Here Checks at the time from json - url is not the same as Last datetime in database. If it isn't the same, program should insert json in data base 
-            {               
-            }
 
+            
+            // Timer for events
+            newTimer.Elapsed += update_sql_TimerEvent;
+            newTimer.Interval = 5000; //  start efter 20 sec
+            newTimer.Start();
+            while (Console.Read() != 'q') {
+                // new interval should be the same time or less then the time, program must store the data
+                
+                Console.WriteLine("\n DateTime now: " + DateTime.Now);
+
+            };
         }
     }
 }
