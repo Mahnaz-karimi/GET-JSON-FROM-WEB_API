@@ -21,7 +21,7 @@ namespace KmdWeb
             dynamic json;
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString("https://localhost:44351/api/values")); // other project sould run first
+                json = JsonConvert.DeserializeObject(wc.DownloadString("https://localhost:44351/api/values")); // other project is on https://github.com/Mahnaz-karimi/GET-JSON-FROM-WEB_API 
             }
             return json;
         }
@@ -54,7 +54,7 @@ namespace KmdWeb
                     "   fromCurrency: " + item.fromCurrency.Value + "   toCurrency: " + item.toCurrency.Value));
             }
 
-            Console.WriteLine("DateTime:  " + (updatedAt.ToString("yyyy-MM-dd HH:mm:ss.fffffff")));
+            Console.WriteLine("updatedAt:  " + (updatedAt.ToString("yyyy-MM-dd HH:mm:ss.fffffff")));
         }
 
         public static void insertJsonDataInSQl(dynamic json, string connString)
@@ -80,7 +80,7 @@ namespace KmdWeb
             int newIntervalInt;
             if (MinuttDifferenceTimeSpam <= interval_time_for_save)
             {
-                newIntervalInt = (interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000 + 1;
+                newIntervalInt = ((interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000) + 1; //  + 1 is for because interval shoudn't be zero! 
                 Console.WriteLine("\n New timer time : " + newIntervalInt/60/1000);
                 return newIntervalInt; // If there is time diference between 30 minetes return a number that should be under 30
             }
