@@ -52,16 +52,15 @@ namespace KmdWeb
             {
                 Console.WriteLine("\n DATA FROM JSON: Rate:  " + string.Format("{0:0.0000000000000000}", (item.rate.Value) +
                     "   fromCurrency: " + item.fromCurrency.Value + "   toCurrency: " + item.toCurrency.Value));
-
             }
-            Console.WriteLine("\n TIME FROM JSON: Rate:  " + "DateTime:  " + (updatedAt.ToString("yyyy-MM-dd HH:mm:ss.fffffff")));
+
+            Console.WriteLine("DateTime:  " + (updatedAt.ToString("yyyy-MM-dd HH:mm:ss.fffffff")));
         }
 
         public static void insertJsonDataInSQl(dynamic json, string connString)
         {
             SqlCommand cmd = new SqlCommand();
-
-            using (SqlConnection conn = new SqlConnection(connString)) // 
+            using (SqlConnection conn = new SqlConnection(connString)) 
                 {
                     conn.Open();
                     cmd.Connection = conn;
@@ -77,8 +76,7 @@ namespace KmdWeb
         }
 
         public static int newTimerTime(int MinuttDifferenceTimeSpam)
-        {
-                                   // diference between json and sql to min
+        {                                   
             int newIntervalInt;
             if (MinuttDifferenceTimeSpam <= interval_time_for_save)
             {
@@ -86,8 +84,7 @@ namespace KmdWeb
                 Console.WriteLine("\n New timer time : " + newIntervalInt/60/1000);
                 return newIntervalInt; // If there is time diference between 30 minetes return a number that should be under 30
             }
-            return 1000;
-            
+            return 1000;            
         }
 
         public static int getMinuttDifferenceTimeSpam()
@@ -121,17 +118,14 @@ namespace KmdWeb
         {
             dynamic json = fetchData(); // Get data from url like json file 
             print_Json_From_URL(json); // print json file
-
             
             // Timer for events
             newTimer.Elapsed += update_sql_TimerEvent;
-            newTimer.Interval = 5000; //  start efter 20 sec
+            int intervalint = newTimerTime(getMinuttDifferenceTimeSpam());
+            newTimer.Interval = intervalint; // starter eventes with new interval
             newTimer.Start();
-            while (Console.Read() != 'q') {
-                // new interval should be the same time or less then the time, program must store the data
-                
+            while (Console.Read() != 'q') {                
                 Console.WriteLine("\n DateTime now: " + DateTime.Now);
-
             };
         }
     }
