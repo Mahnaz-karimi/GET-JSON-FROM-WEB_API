@@ -48,7 +48,7 @@ namespace KmdWeb
         public static void print_Json_From_URL(dynamic json)
         {
             DateTime updatedAt = json.updatedAt.Value;
-            foreach (var item in json.valutaKurser) // loop for print json-data 
+            foreach (var item in json.valutaKurser) // print json-data 
             {
                 Console.WriteLine("\n DATA FROM JSON: Rate:  " + string.Format("{0:0.0000000000000000}", (item.rate.Value) +
                     "   fromCurrency: " + item.fromCurrency.Value + "   toCurrency: " + item.toCurrency.Value));
@@ -75,17 +75,6 @@ namespace KmdWeb
                 }
         }
 
-        public static int newTimerTime(int MinuttDifferenceTimeSpam)
-        {                                   
-            int newIntervalInt;
-            if (MinuttDifferenceTimeSpam <= interval_time_for_save)
-            {
-                newIntervalInt = ((interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000) + 1; //  + 1 is for because interval shoudn't be zero! 
-                Console.WriteLine("\n New timer time : " + newIntervalInt/60/1000);
-                return newIntervalInt; // If there is time diference between 30 minetes return a number that should be under 30
-            }
-            return 1000;            
-        }
 
         public static int getMinuttDifferenceTimeSpam()
         {
@@ -93,9 +82,21 @@ namespace KmdWeb
             DateTime updatedAt = json.updatedAt.Value; // get datetime from json
             DateTime lastDateTime = getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]); // get last datetime in database 
             TimeSpan ts = updatedAt - lastDateTime; // calculate difrenece time between last data from database and datetime from json...
-            int interval = Convert.ToInt32(ts.TotalMinutes);
-            Console.WriteLine("\n Difference betweeen json and sql datetime: " + interval + "\n");
-            return interval;
+            int diff = Convert.ToInt32(ts.TotalMinutes);
+            Console.WriteLine("\n Difference betweeen json and sql datetime: " + diff + "\n");
+            return diff;
+        }
+
+        public static int newTimerTime(int MinuttDifferenceTimeSpam)
+        {
+            int newIntervalInt;
+            if (MinuttDifferenceTimeSpam <= interval_time_for_save)
+            {
+                newIntervalInt = ((interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000) + 1; //  + 1 is for because interval shoudn't be zero! 
+                Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000);
+                return newIntervalInt; // return a new time for timer
+            }
+            return 1000;
         }
 
         public static void update_sql_TimerEvent(object source, ElapsedEventArgs e)
@@ -103,11 +104,11 @@ namespace KmdWeb
             dynamic json = fetchData();
             int minDifference = getMinuttDifferenceTimeSpam(); // difference between json and sql-database
 
-            if ( minDifference >= interval_time_for_save) // if diff-time is bigger then time shoud data saved so save data
+            if ( minDifference >= interval_time_for_save) // if diff-time is bigger then event-timer, data should saved
             {
                 insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
                 Console.WriteLine("\n SQL database is updated: " + DateTime.Now);
-                int intervalint = newTimerTime(getMinuttDifferenceTimeSpam());
+                int intervalint = newTimerTime(getMinuttDifferenceTimeSpam()); // after saving data, we call newtimer
                 newTimer.Interval = intervalint; // starter eventes with new interval
                 Console.WriteLine("\n New interval is: " + intervalint / 60 / 1000);
             }
@@ -117,15 +118,15 @@ namespace KmdWeb
         public static void Main(string[] args)
         {
             dynamic json = fetchData(); // Get data from url like json file 
-            print_Json_From_URL(json); // print json file
-            
+            print_Json_From_URL(json); // print json file            
+
+
             // Timer for events
             newTimer.Elapsed += update_sql_TimerEvent;
             int intervalint = newTimerTime(getMinuttDifferenceTimeSpam());
             newTimer.Interval = intervalint; // starter eventes with new interval
             newTimer.Start();
-            while (Console.Read() != 'q') {                
-                Console.WriteLine("\n DateTime now: " + DateTime.Now);
+            while (Console.Read() != 'q') {
             };
         }
     }
