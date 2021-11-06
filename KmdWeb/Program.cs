@@ -21,7 +21,7 @@ namespace KmdWeb
             dynamic json;
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString("https://localhost:44351/api/values")); // other project is on https://github.com/Mahnaz-karimi/GET-JSON-FROM-WEB_API 
+                json = JsonConvert.DeserializeObject(wc.DownloadString("https://localhost:44351/api/values")); 
             }
             return json;
         }
