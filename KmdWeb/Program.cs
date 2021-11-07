@@ -14,14 +14,14 @@ namespace KmdWeb
 
     {
         public static Timer newTimer = new Timer();
-        public static int interval_time_for_save = 5; // time for at save data-json in sql
+        public static int interval_time_for_save = 3; // time for at save data-json in sql
 
         public static dynamic fetchData() // get json data and save in json object
         {
             dynamic json;
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString("https://localhost:44351/api/values")); 
+                json = JsonConvert.DeserializeObject(wc.DownloadString("http://127.0.0.1:8000/")); 
             }
             return json;
         }
@@ -80,23 +80,23 @@ namespace KmdWeb
         {
             dynamic json = fetchData();
             DateTime updatedAt = json.updatedAt.Value; // get datetime from json
-            DateTime lastDateTime = getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]); // get last datetime in database 
+            DateTime lastDateTime = getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]); // get last datetime from database 
             TimeSpan ts = updatedAt - lastDateTime; // calculate difrenece time between last data from database and datetime from json...
             int diff = Convert.ToInt32(ts.TotalMinutes);
-            Console.WriteLine("\n Difference betweeen json and sql datetime: " + diff + "\n");
+            Console.WriteLine("\n Difference betweeen json and sql datetime is: " + diff + "\n");
             return diff;
         }
 
         public static int newTimerTime(int MinuttDifferenceTimeSpam)
         {
             int newIntervalInt;
-            if (MinuttDifferenceTimeSpam <= interval_time_for_save)
+            if (MinuttDifferenceTimeSpam <= interval_time_for_save) // difference is less than timer, we can calculate a new timer-time
             {
                 newIntervalInt = ((interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000) + 1; //  + 1 is for because interval shoudn't be zero! 
                 Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000);
                 return newIntervalInt; // return a new time for timer
             }
-            return 1000;
+            return 1000; // difference is bigger than timer-time, set timer to 1 sec for save data in sql
         }
 
         public static void update_sql_TimerEvent(object source, ElapsedEventArgs e)
@@ -104,7 +104,7 @@ namespace KmdWeb
             dynamic json = fetchData();
             int minDifference = getMinuttDifferenceTimeSpam(); // difference between json and sql-database
 
-            if ( minDifference >= interval_time_for_save) // if diff-time is bigger then event-timer, data should saved
+            if ( minDifference > 0) // if diff-time between lastdatetime and json is 0, data shouldn't save. if diffrence is bigger then 0, data should saved 
             {
                 insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
                 Console.WriteLine("\n SQL database is updated: " + DateTime.Now);
