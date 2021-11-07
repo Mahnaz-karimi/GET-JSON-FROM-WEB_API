@@ -27,7 +27,7 @@ namespace KmdWeb
         }
        
 
-        public static DateTime getLastDateTimeFromDB(dynamic json, string connString)
+        public static DateTime getLastDateTimeFromDB(string connString)
         {
             SqlCommand cmd = new SqlCommand();
             DateTime dtLine = DateTime.MinValue;
@@ -80,10 +80,11 @@ namespace KmdWeb
         {
             dynamic json = fetchData();
             DateTime updatedAt = json.updatedAt.Value; // get datetime from json
-            DateTime lastDateTime = getLastDateTimeFromDB(json, ConfigurationManager.AppSettings["connectionString"]); // get last datetime from database 
+            DateTime lastDateTime = getLastDateTimeFromDB(ConfigurationManager.AppSettings["connectionString"]); // get last datetime from database ??
             TimeSpan ts = updatedAt - lastDateTime; // calculate difrenece time between last data from database and datetime from json...
             int diff = Convert.ToInt32(ts.TotalMinutes);
-            Console.WriteLine("\n Difference betweeen json and sql datetime is: " + diff + "\n");
+            Console.WriteLine("\n Difference between valutakurser website and our sql databases is: " + diff + "\n");
+            Console.WriteLine("\n lastDateTime is: " + lastDateTime.ToString() + "\n");
             return diff;
         }
 
@@ -94,9 +95,21 @@ namespace KmdWeb
             {
                 newIntervalInt = ((interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000) + 1000; //  + 1000 = 1 sec is for because interval shoudn't be zero! 
                 Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000);
+                Console.WriteLine("\n New timer and date time now: " + DateTime.Now);
                 return newIntervalInt; // return a new time for timer
             }
-            return 1000; // difference is bigger than timer-time, new-timer will be 1 sec for save data in sql
+            else 
+            {                
+                DateTime lastDateTime = getLastDateTimeFromDB( ConfigurationManager.AppSettings["connectionString"]); // get last datetime from database 
+                TimeSpan ts = DateTime.Now - lastDateTime; // calculate difrenece time between last data from database and datetime from json...
+                int diff = Convert.ToInt32(ts.TotalMinutes);
+                Console.WriteLine("\n Díffrence between sql last updated and now is: " + diff + "\n");
+
+                // newTimer.Close();
+                return 1000;
+            }
+
+             // difference is bigger than timer-time, new-timer will be 1 sec for save data in sql
         }
 
         public static void update_sql_TimerEvent(object source, ElapsedEventArgs e)
@@ -104,10 +117,11 @@ namespace KmdWeb
             dynamic json = fetchData();
             int minDifference = getMinuttDifferenceTimeSpam(); // difference between json and sql-database
 
-            if ( minDifference > 0) // If diffrence between json and sql is bigger then 0, that means, there is some diffrence, Therefore data should saved 
+            if ( minDifference > 0) // If diffrence between json and sql is bigger then 0, that means, there should be some diffrence, Therefore data will saved 
             {
                 insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
-                Console.WriteLine("\n SQL database is updated: " + DateTime.Now);
+                Console.WriteLine("\n the time posted on valutakurser website is: " + json.updatedAt.Value);
+                Console.WriteLine("\n SQL database is updated. Date time now: " + DateTime.Now);
                 int intervalint = newTimerTime(getMinuttDifferenceTimeSpam()); // after saving data, we call newtimer
                 newTimer.Interval = intervalint; // starter eventes with new interval
                 Console.WriteLine("\n New interval is: " + intervalint / 60 / 1000);
@@ -117,7 +131,7 @@ namespace KmdWeb
 
         public static void Main(string[] args)
         {
-            dynamic json = fetchData(); // Get data from url like json file 
+            dynamic json = fetchData(); // Get data from json file 
             print_Json_From_URL(json); // print json file            
 
 
