@@ -24,17 +24,17 @@ namespace KmdWeb
             return Convert.ToInt32((DateTime.Now - updatedAt).TotalMinutes);
         }
 
-        public static void getNewTimer(int difference)
+        public static void getNewTimer(int jsont_difference)
         {
-            if (difference <= interval_event_min) // if the time difference between json and datetime-now or json and sql is less or equal to the time is estimated that the website will be updated.
+            if (jsont_difference <= interval_event_min) // here the program get new timer time for events. if the time difference between json and now is less or equal to the time that is estimated, the website will be updated:
             {
-                int newIntervalInt = ((interval_event_min - difference) * 60 * 1000) + reload_time; // after saving data, we get new interval
+                int newIntervalInt = ((interval_event_min - jsont_difference) * 60 * 1000) + reload_time; // after saving data, we get new interval
                 newTimer.Interval = newIntervalInt;
                 Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000 + "  Date time now: " + DateTime.Now);
             }
             else  // if the time difference between json and datetime-now is bigge then the time is estimated, timer will closes! 
             {
-                Console.WriteLine("\n Website currency exchange rate not updated, is  : " + difference + " minutter, Date time now: " + DateTime.Now);
+                Console.WriteLine("\n Website currency exchange rate not updated, is  : " + jsont_difference + " minutter, Date time now: " + DateTime.Now);
                 newTimer.Close();
             }
 
@@ -45,22 +45,18 @@ namespace KmdWeb
         {
             dynamic json = DataHandling.fetchData(); // fetch json from the website
             DataHandling.print_Json_From_URL(json); // print json file 
-            int minDifference = get_Minut_Difference_Json_from_sql(json.updatedAt.Value); // difference between json and sql-database
-            Console.WriteLine("\n Difference between valutakurser website and our sql databases is: " + minDifference + "\n");
-            if (minDifference > 0) // if there is time difference between json and sql, therefore data is saved 
+            int difference_Json_SQl = get_Minut_Difference_Json_from_sql(json.updatedAt.Value); // difference between json and sql-database
+            Console.WriteLine("\n Difference between valutakurser website and our sql databases is: " + difference_Json_SQl + "\n");
+            int difference_Json_NOW = get_Minut_Difference_Json_From_Now(json.updatedAt.Value);
+
+            if (difference_Json_SQl > 0) // if there is time difference between json and sql, therefore data will saved 
             {
                 DataHandling.insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
-                Console.WriteLine("\n SQL-database is updated. Date time now: " + DateTime.Now);
-                int differenceJN = get_Minut_Difference_Json_From_Now(json.updatedAt.Value);
-                getNewTimer(differenceJN);
+                Console.WriteLine("\n SQL-database is updated. Date time now: " + DateTime.Now);                
 
             }
-            else if (minDifference == 0)  // if there is no diffrenece, that means if data has been saved recently! 
-            {
-                int diffnow = get_Minut_Difference_Json_From_Now(json.updatedAt.Value);
-                getNewTimer(diffnow);                
-            }
-            
+            getNewTimer(difference_Json_NOW);
+
 
         }
 
