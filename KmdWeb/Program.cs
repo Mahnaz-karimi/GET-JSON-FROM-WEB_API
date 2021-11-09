@@ -16,9 +16,8 @@ namespace KmdWeb
         public static Timer newTimer = new Timer();
         public static int interval_time_for_save = 3; // minut time for check json-data    
 
-        public static int get_Minut_Difference_Json_from_sql() // diffrence between json and sql-database
+        public static int get_Minut_Difference_Json_from_sql(DateTime updatedAt) // diffrence between json and sql-database
         {
-            DateTime updatedAt = DataHandling.fetchData().updatedAt.Value;
             DateTime lastDateTime = DataHandling.getLastDateTimeFromDB(ConfigurationManager.AppSettings["connectionString"]); // get last datetime from database ??
             return Convert.ToInt32((updatedAt - lastDateTime).TotalMinutes);
         }
@@ -29,24 +28,18 @@ namespace KmdWeb
             return Convert.ToInt32((DateTime.Now - updatedAt).TotalMinutes);
         }
 
-        public static int getTimerTime(int MinuttDifferenceTimeSpam)
-        { 
-                  
-            return (((interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000) +1000);            
-        }
-
         public static void update_sql_TimerEvent(object source, ElapsedEventArgs e)
         {
             dynamic json = DataHandling.fetchData(); // fetch json from the website
             DataHandling.print_Json_From_URL(json); // print json file 
-            int minDifference = get_Minut_Difference_Json_from_sql(); // difference between json and sql-database
+            int minDifference = get_Minut_Difference_Json_from_sql(json.updatedAt.Value); // difference between json and sql-database
             Console.WriteLine("\n Difference between valutakurser website and our sql databases is: " + minDifference + "\n");
 
             if ( minDifference > 0) // if the time difference between json and sql is greater than 0, it means that there should be some difference, therefore data is saved 
             {
                 DataHandling.insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);                 
                 Console.WriteLine("\n SQL-database is updated. Date time now: " + DateTime.Now);
-                int newIntervalInt = getTimerTime(get_Minut_Difference_Json_from_sql()); // after saving data, we get new interval
+                int newIntervalInt = ((interval_time_for_save - get_Minut_Difference_Json_From_Now(json.updatedAt.Value)) * 60 * 1000) + 1000; // after saving data, we get new interval
                 newTimer.Interval = newIntervalInt; 
                 Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000 + "      Date time now: " + DateTime.Now);
             }
