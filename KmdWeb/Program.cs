@@ -14,13 +14,11 @@ namespace KmdWeb
 
         public static int get_Minut_Difference_Json_from_sql(DateTime updatedAt) // diffrence between json and sql-database
         {
-            DateTime lastDateTime = DataHandling.getLastDateTimeFromDB(ConfigurationManager.AppSettings["connectionString"]);
-            return Convert.ToInt32((updatedAt - lastDateTime).TotalMinutes); 
+            return Convert.ToInt32((updatedAt - DataHandling.getLastDateTimeFromDB(ConfigurationManager.AppSettings["connectionString"])).TotalMinutes); 
         }
 
         public static int get_Minut_Difference_Json_From_Now(DateTime updatedAt) // diffrence between json and datetime now
         {         
-            // calculate difrenece time between last data from database and datetime from json...
             return Convert.ToInt32((DateTime.Now - updatedAt).TotalMinutes);
         }
 
@@ -45,16 +43,15 @@ namespace KmdWeb
             dynamic json = DataHandling.fetchData(); // fetch json from the website
             DataHandling.print_Json_From_URL(json); // print json file 
             int difference_Json_SQl = get_Minut_Difference_Json_from_sql(json.updatedAt.Value); // difference between json and sql-database
-            Console.WriteLine("\n Difference between valutakurser website and our sql databases is: " + difference_Json_SQl + "\n");
-            int difference_Json_NOW = get_Minut_Difference_Json_From_Now(json.updatedAt.Value);
+            Console.WriteLine("\n Difference between valutakurser website and our sql databases is: " + difference_Json_SQl + "\n");            
 
             if (difference_Json_SQl > 0) // if there is time difference between json and sql, therefore data will saved.
             {
                 DataHandling.insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
                 Console.WriteLine("\n SQL-database is updated. Date time now: " + DateTime.Now);
             }
-            // when program is here that means difference_Json_SQl is ziro we get new timer time
-            getNewTimer(difference_Json_NOW); 
+            // when program is here that means difference_Json_SQl is ziro, and we get new timer time
+            getNewTimer(get_Minut_Difference_Json_From_Now(json.updatedAt.Value)); 
         }
 
         public static void Main(string[] args)
