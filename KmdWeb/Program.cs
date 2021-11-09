@@ -24,11 +24,11 @@ namespace KmdWeb
             return Convert.ToInt32((DateTime.Now - updatedAt).TotalMinutes);
         }
 
-        public static void getNewTimer(int jsont_difference)
+        public static void getNewTimer(int jsont_difference) //  get new timer time for events.
         {
-            if (jsont_difference <= interval_event_min) // here the program get new timer time for events. if the time difference between json and now is less or equal to the time that is estimated, the website will be updated:
+            if (jsont_difference <= interval_event_min) // if the time difference between json and now is less or equal to the time that is estimated for updating the website
             {
-                int newIntervalInt = ((interval_event_min - jsont_difference) * 60 * 1000) + reload_time; // after saving data, we get new interval
+                int newIntervalInt = ((interval_event_min - jsont_difference) * 60 * 1000) + reload_time; 
                 newTimer.Interval = newIntervalInt;
                 Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000 + "  Date time now: " + DateTime.Now);
             }
@@ -40,7 +40,6 @@ namespace KmdWeb
 
         }
 
-
         public static void update_sql_TimerEvent(object source, ElapsedEventArgs e)
         {
             dynamic json = DataHandling.fetchData(); // fetch json from the website
@@ -49,15 +48,13 @@ namespace KmdWeb
             Console.WriteLine("\n Difference between valutakurser website and our sql databases is: " + difference_Json_SQl + "\n");
             int difference_Json_NOW = get_Minut_Difference_Json_From_Now(json.updatedAt.Value);
 
-            if (difference_Json_SQl > 0) // if there is time difference between json and sql, therefore data will saved 
+            if (difference_Json_SQl > 0) // if there is time difference between json and sql, therefore data will saved.
             {
                 DataHandling.insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);
-                Console.WriteLine("\n SQL-database is updated. Date time now: " + DateTime.Now);                
-
+                Console.WriteLine("\n SQL-database is updated. Date time now: " + DateTime.Now);
             }
-            getNewTimer(difference_Json_NOW);
-
-
+            // when program is here that means difference_Json_SQl is ziro we get new timer time
+            getNewTimer(difference_Json_NOW); 
         }
 
         public static void Main(string[] args)
@@ -69,7 +66,6 @@ namespace KmdWeb
             while (Console.Read() != 'q')
             {
             };
-
         }
     }
 }
