@@ -20,10 +20,15 @@ namespace KmdWeb
                 newTimer.Interval = newIntervalInt;
                 Console.WriteLine("\n New timer time : " + newIntervalInt / 60 / 1000 + "  Date time now: " + DateTime.Now + "\n");
             }
-            else if (jsont_difference_from_now > interval_event && jsont_difference_from_now < 86400000)// if the time difference between json and datetime-now is bigger then the time is estimated, timer will sat 2 secend
+            else if (jsont_difference_from_now > interval_event && jsont_difference_from_now <= 86400000)// if the time difference between json and datetime-now is bigger than the time is estimated and less than one day, time will set 2 second
             {
                 Console.WriteLine("\n Website currency exchange rate not updated, is: " + jsont_difference_from_now / 60 / 1000 + " minutter, Date time now: " + DateTime.Now);
                 newTimer.Interval = reload_time;
+            }
+            else if (86400000 < jsont_difference_from_now && jsont_difference_from_now < (86400000*2))// if the time difference between json and datetime-now is bigger than one day and less to days, timer will sat one hour
+            {
+                Console.WriteLine("\n Website currency exchange rate not updated, is: " + jsont_difference_from_now / 60 / 1000 + " minutter, Date time now: " + DateTime.Now);
+                newTimer.Interval = 3600000; // interval sets to one hour
             }            
 
         }
