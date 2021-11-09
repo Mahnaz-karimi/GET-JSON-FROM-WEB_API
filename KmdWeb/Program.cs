@@ -20,30 +20,19 @@ namespace KmdWeb
         {
             DateTime updatedAt = DataHandling.fetchData().updatedAt.Value;
             DateTime lastDateTime = DataHandling.getLastDateTimeFromDB(ConfigurationManager.AppSettings["connectionString"]); // get last datetime from database ??
-            TimeSpan ts = updatedAt - lastDateTime; // calculate difrenece time between last data from database and datetime from json...
-            int diff = Convert.ToInt32(ts.TotalMinutes);
-            return diff;
+            return Convert.ToInt32((updatedAt - lastDateTime).TotalMinutes);
         }
 
         public static int get_Minut_Difference_Json_From_Now(DateTime updatedAt) // diffrence between json and datetime now
         {         
-            TimeSpan ts = (DateTime.Now - updatedAt); // calculate difrenece time between last data from database and datetime from json...
-            int diff = Convert.ToInt32(ts.TotalMinutes);
-            return diff;
+            // calculate difrenece time between last data from database and datetime from json...
+            return Convert.ToInt32((DateTime.Now - updatedAt).TotalMinutes);
         }
 
         public static int getTimerTime(int MinuttDifferenceTimeSpam)
-        {
-            int newIntervalInt;
-            if (MinuttDifferenceTimeSpam <= interval_time_for_save ) // difference is less than timer, we can calculate a new timer-time that will be under 'interval_time_for_save'
-            {                
-                {
-                    newIntervalInt = ((interval_time_for_save - MinuttDifferenceTimeSpam ) * 60 * 1000) + 1000; //  + 1000 ms is for because interval couldn't be zero!                                                                                                               
-                    return newIntervalInt; // return a new time for timer
-                }                
-            }    
+        { 
                   
-            return 1000;            
+            return (((interval_time_for_save - MinuttDifferenceTimeSpam) * 60 * 1000) +1000);            
         }
 
         public static void update_sql_TimerEvent(object source, ElapsedEventArgs e)
@@ -52,6 +41,7 @@ namespace KmdWeb
             DataHandling.print_Json_From_URL(json); // print json file 
             int minDifference = get_Minut_Difference_Json_from_sql(); // difference between json and sql-database
             Console.WriteLine("\n Difference between valutakurser website and our sql databases is: " + minDifference + "\n");
+
             if ( minDifference > 0) // if the time difference between json and sql is greater than 0, it means that there should be some difference, therefore data is saved 
             {
                 DataHandling.insertJsonDataInSQl(json, ConfigurationManager.AppSettings["connectionString"]);                 
