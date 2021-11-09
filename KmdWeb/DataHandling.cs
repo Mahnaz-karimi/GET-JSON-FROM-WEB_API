@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Data;
 using System.Net;
 using System.Data.SqlClient;
-using System.Timers;
-using System.Configuration;
 using Newtonsoft.Json;
 
 namespace KmdWeb
@@ -15,7 +12,7 @@ namespace KmdWeb
             dynamic json;
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString("http://127.0.0.1:8000/"));
+                json = JsonConvert.DeserializeObject(wc.DownloadString("http://127.0.0.1:8000/")); 
             }
             return json;
         }

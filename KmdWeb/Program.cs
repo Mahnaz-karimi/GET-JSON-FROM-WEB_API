@@ -1,10 +1,5 @@
 ﻿
-using Newtonsoft.Json;
-
 using System;
-using System.Data;
-using System.Net;
-using System.Data.SqlClient;
 using System.Timers;
 using System.Configuration;
 
