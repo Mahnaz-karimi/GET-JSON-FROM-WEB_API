@@ -1,0 +1,24 @@
+{
+
+    "valutaKurser":
+    [
+        {
+            "fromCurrency": "DKK",
+
+            "toCurrency": "USD",
+
+            "rate": 15.0
+        },
+        {
+            "fromCurrency": "DKK",
+            "toCurrency": "SEK",
+            "rate": 135.0
+        },
+        {
+            "fromCurrency": "DKK",
+            "toCurrency": "GBP",
+            "rate": 11.0
+        }
+    ],
+    "updatedAt": "2021-10-16T19:24:37.7190399Z"
+}
