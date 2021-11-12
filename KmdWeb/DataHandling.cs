@@ -2,6 +2,9 @@
 using System.Net;
 using System.Data.SqlClient;
 using Newtonsoft.Json;
+using System.Dynamic;
+using System.Collections.Generic;
+using System.Net.Http.Headers;
 
 namespace KmdWeb
 
@@ -9,12 +12,12 @@ namespace KmdWeb
     {
         public static dynamic fetchData() // get json data 
         {
-            dynamic json;
+            dynamic json = new ExpandoObject();
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString("http://127.0.0.1:8000/")); 
+                json = JsonConvert.DeserializeObject(wc.DownloadString("http://127.0.0.1:8000/"));               
             }
-            return json;
+            return json ;
         }
 
         public static DateTime getLastDateTimeFromDB(string connString)
@@ -34,7 +37,7 @@ namespace KmdWeb
             }
             return dtLine;
         }
-        public static void insertJsonDataInSQl(dynamic json, string connString)
+        public static void insertJsonDataInSQl(dynamic json, string connString, string ValutaKurser)
         {
             SqlCommand cmd = new SqlCommand();
             using (SqlConnection conn = new SqlConnection(connString)) // save json-data to sql database
@@ -44,7 +47,7 @@ namespace KmdWeb
                 foreach (var item in json.valutaKurser)
                 {
                     Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value) + " updateAt is " + Convert.ToString(json.updatedAt.Value));
-                    cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt) ";
+                    cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt)";
                     cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
                                         "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
                     cmd.ExecuteNonQuery();
