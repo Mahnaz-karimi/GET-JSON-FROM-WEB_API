@@ -47,7 +47,7 @@ namespace KmdWeb
                 foreach (var item in json.valutaKurser)
                 {
                     Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value) + " updateAt is " + Convert.ToString(json.updatedAt.Value));
-                    cmd.CommandText = "INSERT INTO ValutaKurser (FromCurrency, ToCurrency, Rate, UpdatedAt)";
+                    cmd.CommandText = "INSERT INTO "+ ValutaKurser +" (FromCurrency, ToCurrency, Rate, UpdatedAt)";
                     cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
                                         "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
                     cmd.ExecuteNonQuery();
@@ -55,9 +55,8 @@ namespace KmdWeb
             }
         }
         
-        public static void print_Json_From_URL(dynamic json)
+        public static void print_Json(dynamic json, DateTime updatedAt)
         {
-            DateTime updatedAt = json.updatedAt.Value;
             foreach (var item in json.valutaKurser) // print json-data 
             {
                 Console.WriteLine("DATA FROM JSON: Rate:  " + string.Format("{0:0.0000000000000000}", (item.rate.Value) +

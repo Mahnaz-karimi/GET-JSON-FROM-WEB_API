@@ -17,43 +17,46 @@ namespace TestTimer
         int hour_ms_test = 3600; //milisecendes in hour
 
         [TestMethod]
-        public void TestGetDifference()
-        {
-            dynamic jsonTest;
-            using (WebClient wctest = new WebClient())
-            {                
-             jsonTest = JsonConvert.DeserializeObject(wctest.DownloadString("C:/Users/Mahnaz/Desktop/GET_JSON_FROM_WEB_API/TestTimer/currencies.json")); 
-            }                      
-            DateTime updateTimeTest = jsonTest.updatedAt.Value;            
+        public void Test_Get_Diff_Json_Now()
+        {                                 
+            DateTime updateTimeTest = Convert.ToDateTime("2021-11-11T19:24:37.7190399Z");            
             Double d = Convert.ToDouble((DateTime.Now - updateTimeTest).TotalSeconds);
-            Assert.AreEqual(Convert.ToInt64(TimerCalculate.getDifference_Json_Now(updateTimeTest)), Convert.ToInt64(d));
-            
+            Assert.AreEqual(Convert.ToInt64(TimerCalculate.getDiff_Json_Now(updateTimeTest)), Convert.ToInt64(d));            
         }
+
+
         [TestMethod]
-        public void TestIntervalInt_when_json_is_On_time()
-        {
-            dynamic jsonTest;
-            using (WebClient wctest = new WebClient())
-            {
-                jsonTest = JsonConvert.DeserializeObject(wctest.DownloadString("C:/Users/Mahnaz/Desktop/GET_JSON_FROM_WEB_API/TestTimer/currencies.json"));
-            }
-            DateTime updateTimeTest = jsonTest.updatedAt.Value;
-            Double d = Convert.ToDouble((DateTime.Now - updateTimeTest).TotalSeconds);
-            Assert.AreEqual(TimerCalculate.get_new_IntervalInt_when_json_is_On_time(d), interval_event_test-d + reload_time_test);
+        public void Test_Get_New_Timer0()
+        {          
+            DateTime updateTimeTest0 = Convert.ToDateTime("2021-11-5T19:24:37.7190399Z");
+            Double d0 = Convert.ToDouble((DateTime.Now - updateTimeTest0).TotalSeconds);
+            Assert.AreEqual(TimerCalculate.get_New_Timer_Time(d0), day_ms_test);         
         }
+
         [TestMethod]
-        public void Test_Get_New_Timer_Time()
+        public void Test_Get_New_Timer1()
         {
-            dynamic jsonTest;
-            using (WebClient wctest = new WebClient())
-            {
-                jsonTest = JsonConvert.DeserializeObject(wctest.DownloadString("C:/Users/Mahnaz/Desktop/GET_JSON_FROM_WEB_API/TestTimer/currencies.json"));
-            }
-            DateTime updateTimeTest = jsonTest.updatedAt.Value;
-            Double d = Convert.ToDouble((DateTime.Now - updateTimeTest).TotalSeconds);
-            Assert.AreEqual(TimerCalculate.get_New_Timer_Time(System.Math.Abs(d)), reload_time_test);
+            DateTime updateTimeTest1 = Convert.ToDateTime("2021-11-11T19:24:37.7190399Z");
+            Double d1 = Convert.ToDouble((DateTime.Now - updateTimeTest1).TotalSeconds);
+            Assert.AreEqual(TimerCalculate.get_New_Timer_Time(d1), reload_time_test + interval_event_test);            
         }
-        
+
+        [TestMethod]
+        public void Test_Get_New_Timer3()
+        {
+            DateTime updateTimeTest2 = Convert.ToDateTime("2021-10-01T19:24:37.7190399Z");
+            Double d2 = Convert.ToDouble((DateTime.Now - updateTimeTest2).TotalSeconds);
+            Assert.AreEqual(TimerCalculate.get_New_Timer_Time(d2), day_ms_test);
+        }
+
+        [TestMethod]
+        public void Test_Get_New_Timer4()
+        {
+            DateTime updateTimeTest2 = Convert.ToDateTime("2023-12-01T19:24:37.7190399Z");
+            Double d = Convert.ToDouble((DateTime.Now - updateTimeTest2).TotalSeconds);
+            Assert.IsTrue(TimerCalculate.get_New_Timer_Time(d)> day_ms_test);
+        }
+
     }
     
 }
