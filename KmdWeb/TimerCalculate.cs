@@ -27,11 +27,17 @@ namespace KmdWeb
 
         public static Double get_New_Timer_Time(Double jsont_diff_from_now) //  get new timer time for events.
         {
-            if (jsont_diff_from_now <= (interval_event_sec + reload_time_sec)) // if the time difference between json and now is less or equal to the time that is estimated, we get timer on 3 min or less
+            if (jsont_diff_from_now < 0)
             {
+                Console.WriteLine("\n  Json time indicates a time of future and it may not be correct");
+                return hour_sec + interval_event_sec;
+            }
+            else if (jsont_diff_from_now > 0 && jsont_diff_from_now <= (interval_event_sec + reload_time_sec)) // if the time difference between json and now is less or equal to the time that is estimated, we get timer on 3 min or less
+            {
+                Console.WriteLine("\n Website has updated " + (interval_event_sec - jsont_diff_from_now) / 60 + " minutter ago, Date time now: " + DateTime.Now);
                 return (interval_event_sec - jsont_diff_from_now) + reload_time_sec; ;
             }
-            else if (jsont_diff_from_now > interval_event_sec && jsont_diff_from_now <= day_sec) // if the time difference between json and datetime-now is bigger than the time is estimated and less than one day, time will set 2 second
+            else if (jsont_diff_from_now > interval_event_sec && jsont_diff_from_now <= day_sec) // if the time difference between json and datetime-now is bigger than the time is estimated and less than one day, time will set 3 min+ 2 second
             {
                 Console.WriteLine("\n Website currency exchange rate is not updated: " + jsont_diff_from_now / 60  + " minutter, Date time now: " + DateTime.Now);
                 return reload_time_sec + interval_event_sec;
@@ -41,14 +47,18 @@ namespace KmdWeb
                 Console.WriteLine("\n " + jsont_diff_from_now / day_sec + " day has passed and the website has not been updated long, about: " + jsont_diff_from_now / 60  + " minutter ago, Date time now: " + DateTime.Now);
                 return hour_sec; // interval sets to one hour
             }
-            else { return day_sec; }
+            else
+            {
+                Console.WriteLine("\n " + jsont_diff_from_now / day_sec + " day has passed and the website has not been updated long");
+                return day_sec;
+            }
         }
 
         public static Boolean If_There_Is_Difference(Double diff_Json_SQl)
         {
             if (diff_Json_SQl > 0) // if there is time difference between json and sql, data will be saved.
             {
-                Console.WriteLine("\n Yes There is some thing new on the website");
+                Console.WriteLine("\n Yes There is some thing new on the website \n");
                 return true;
             }
             return false;

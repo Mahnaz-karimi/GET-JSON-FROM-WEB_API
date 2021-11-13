@@ -13,8 +13,8 @@ namespace KmdWeb
 
         public static void setNewInterval(DateTime json_update_time)
         {
-            // when the program is here, it means difference Json SQL is zero and then we get new timer time for update         
-            newTimer.Interval = milisecend * TimerCalculate.get_New_Timer_Time(TimerCalculate.getDiff_Json_Now(json_update_time)); // get difference from json and now and calculate interval for new timer events 
+             // when the program is here, it means difference Json and SQL is nothing and then we get new timer time for update         
+             newTimer.Interval = milisecend * TimerCalculate.get_New_Timer_Time(TimerCalculate.getDiff_Json_Now(json_update_time)); // get difference from json and now and calculate interval for new timer events            
         }
 
         public static void update_sql_TimerEvent(object source, ElapsedEventArgs e)
