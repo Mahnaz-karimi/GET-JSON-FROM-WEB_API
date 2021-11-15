@@ -1,5 +1,5 @@
 
-## for creating table in microsoft sql database
+## SQL script for creating table in microsoft sql database
 
 CREATE TABLE ValutaKurser (
     id int IDENTITY(1,1) PRIMARY KEY,
