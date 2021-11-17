@@ -15,7 +15,7 @@ namespace KmdWeb
             dynamic json = new ExpandoObject();
             using (WebClient wc = new WebClient())
             {
-                json = JsonConvert.DeserializeObject(wc.DownloadString("http://127.0.0.1:8000/"));               
+                json = JsonConvert.DeserializeObject(wc.DownloadString("http://127.0.0.1:8000/"));   // website updates every 3 minuets            
             }
             return json ;
         }
@@ -37,21 +37,24 @@ namespace KmdWeb
             }
             return dtLine;
         }
-        public static void insertJsonDataInSQl(dynamic json, string connString, string ValutaKurser)
+        public static void insertJsonDataInSQl(dynamic json, string connString, string ValutaKurser, double diff_Json_SQl)
         {
-            SqlCommand cmd = new SqlCommand();
-            using (SqlConnection conn = new SqlConnection(connString)) // save json-data to sql database
+            if (TimerCalculate.If_There_Is_Difference(diff_Json_SQl)) // if there is time difference between json and sql, json-data will be saved in sql
             {
-                conn.Open();
-                cmd.Connection = conn;
-                foreach (var item in json.valutaKurser)
+                SqlCommand cmd = new SqlCommand();
+                using (SqlConnection conn = new SqlConnection(connString)) // save json-data to sql database
                 {
-                    Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value) + " updateAt is " + Convert.ToString(json.updatedAt.Value));
-                    cmd.CommandText = "INSERT INTO "+ ValutaKurser +" (FromCurrency, ToCurrency, Rate, UpdatedAt)";
-                    cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
-                                        "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
-                    cmd.ExecuteNonQuery();
-                }                
+                    conn.Open();
+                    cmd.Connection = conn;
+                    foreach (var item in json.valutaKurser)
+                    {
+                        Console.WriteLine("INSERTING DATA IN SQL..... Rate is: " + Convert.ToString(item.rate.Value) + " updateAt is " + Convert.ToString(json.updatedAt.Value));
+                        cmd.CommandText = "INSERT INTO " + ValutaKurser + " (FromCurrency, ToCurrency, Rate, UpdatedAt)";
+                        cmd.CommandText += "Values ('" + item.fromCurrency.Value + "', '" + item.toCurrency.Value + "', CAST(" + Convert.ToString(item.rate.Value).Replace(',', '.') + " AS NUMERIC(25,15))," +
+                                            "convert(datetime2,'" + json.updatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss.fffffff") + "'))";
+                        cmd.ExecuteNonQuery();
+                    }
+                }
             }
         }
         
